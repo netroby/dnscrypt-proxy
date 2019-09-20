@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -9,11 +8,10 @@ import (
 
 	"github.com/jedisct1/dlog"
 	"github.com/miekg/dns"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	"github.com/rs/zerolog/log"
 )
 
 type PluginQueryLog struct {
-	logger        *lumberjack.Logger
 	format        string
 	ignoredQtypes []string
 }
@@ -27,7 +25,6 @@ func (plugin *PluginQueryLog) Description() string {
 }
 
 func (plugin *PluginQueryLog) Init(proxy *Proxy) error {
-	plugin.logger = &lumberjack.Logger{LocalTime: true, MaxSize: proxy.logMaxSize, MaxAge: proxy.logMaxAge, MaxBackups: proxy.logMaxBackups, Filename: proxy.queryLogFile, Compress: true}
 	plugin.format = proxy.queryLogFormat
 	plugin.ignoredQtypes = proxy.queryLogIgnoredQtypes
 
@@ -102,9 +99,6 @@ func (plugin *PluginQueryLog) Eval(pluginsState *PluginsState, msg *dns.Msg) err
 	} else {
 		dlog.Fatalf("Unexpected log format: [%s]", plugin.format)
 	}
-	if plugin.logger == nil {
-		return errors.New("Log file not initialized")
-	}
-	plugin.logger.Write([]byte(line))
+	log.Info().Msg(line)
 	return nil
 }
